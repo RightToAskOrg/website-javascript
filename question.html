@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Question:</title>
+    </head>
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            qID = getQuestionID(window.location.href);
+            console.log(qID);
+            if (qID == null) {
+                renderError("Question ID missing")
+                return;
+            }
+            try {
+                data = await getData(qID);
+            } catch(e) {
+                renderError("Something went wrong, we are working on it. If error persists, please <a href='https://righttoask.democracydevelopers.org.au/contact-us' target='_blank'>contact us</a>")
+                return
+            }
+            console.log("Data", data)
+            if (data.Ok != null) {
+                renderQuestion(data.Ok);
+            } else {
+                renderError(`Question with ID ${qID} not found`)
+                return
+            }
+            document.querySelector("#content").style.display = ""
+        });
+        function getQuestionID(url) {
+            const u = new URL(url);
+            return u.searchParams.get("id");
+        }
+        async function getData(qID) {
+            const url = `https://righttoasktestserver2.democracydevelopers.org.au/get_question?question_id=${qID}`;
+            const response = await fetch(url);
+            return response.json();
+        }
+        function renderQuestion(q) {
+            document.querySelector("#title").innerText += q.question_text;
+            document.querySelector("#author").innerText += q.author;
+            document.querySelector("#vote").innerText += q.net_votes;
+            document.querySelector("#dateCreated").innerText += new Date(q.timestamp*1000).toLocaleDateString();
+            asker = document.querySelector("#whoShouldAsk");
+            if (q.mp_who_should_ask_the_question && q.mp_who_should_ask_the_question.length > 0) {
+                renderMP(asker, q.mp_who_should_ask_the_question[0].MP);
+            } else {
+                asker.style.display = "none"
+            }
+            answerer = document.querySelector("#whoShouldAnswer");
+            if (q.entity_who_should_answer_the_question && q.entity_who_should_answer_the_question.length > 0) {
+                renderMP(answerer, q.entity_who_should_answer_the_question[0].MP);
+            } else {
+                answerer.style.display = "none"
+            }
+        }
+        function renderMP(node, mp) {
+            console.log(mp)
+            node.querySelector(".firstName").innerText += mp.surname;
+            node.querySelector(".surname").innerText += mp.first_name;
+            node.querySelector(".chamber").innerText += mp.electorate.chamber;
+            node.querySelector(".region").innerText += mp.electorate.region;
+        }
+        function renderError(m) {
+            document.querySelector("#error").innerHTML = m
+            document.querySelector("#error").style.display = ""
+        }
+    </script>
+
+    <body>
+        <div id="error" style="display: none;"></div>
+        <div id="content" style="display: none;">
+            <div id="title">Title: </div>
+            <div id="author">Author: </div>
+            <div id="dateCreated"></div>
+            <div id="vote">Vote: </div>
+            <div id="whoShouldAsk">
+                Who should ask?
+                <div class="firstName">firstname: </div>
+                <div class="surname">surname: </div>
+                <div class="chamber">chamber: </div>
+                <div class="region">region: </div>
+            </div>
+            <div id="whoShouldAnswer">
+                Who should answer?
+                <div class="firstName">firstname: </div>
+                <div class="surname">surname: </div>
+                <div class="chamber">chamber: </div>
+                <div class="region">region: </div>
+            </div>
+        </div>
+    </body>
+</html>
+
+
